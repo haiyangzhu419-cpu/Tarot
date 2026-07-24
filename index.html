@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>塔罗 - 手势占卜</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0614;
+            --bg-purple: #1a0a2e;
+            --gold: #d4a853;
+            --gold-light: #e8d5b7;
+            --glass: rgba(26, 10, 46, 0.6);
+            --glass-border: rgba(212, 168, 83, 0.15);
+            --text-primary: #e8d5b7;
+            --text-secondary: rgba(232, 213, 183, 0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Noto Serif SC', Georgia, serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            overflow: hidden;
+            width: 100vw; height: 100vh;
+            position: relative;
+            overscroll-behavior: none;
+        }
+
+        #particles {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        .page {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.6s ease;
+            z-index: 10; padding: 20px;
+            overflow-y: auto;
+        }
+        .page.active { opacity: 1; pointer-events: auto; }
+
+        /* ===== 玻璃卡片 ===== */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+        }
+
+        /* ===== 按钮 ===== */
+        .mystic-btn {
+            background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05));
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 14px 48px;
+            font-size: 16px; letter-spacing: 4px;
+            font-family: 'Noto Serif SC', serif;
+            border-radius: 30px; cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative; overflow: hidden;
+        }
+        .mystic-btn:hover, .mystic-btn:active {
+            background: linear-gradient(135deg, rgba(212,168,83,0.3), rgba(212,168,83,0.1));
+            box-shadow: 0 0 30px rgba(212,168,83,0.3);
+            transform: translateY(-2px);
+        }
+        .mystic-btn:disabled {
+            opacity: 0.4; cursor: not-allowed;
+            transform: none; box-shadow: none;
+        }
+        .mystic-btn-small { padding: 10px 32px; font-size: 14px; }
+
+        /* ===== 输入框 ===== */
+        .mystic-input {
+            width: 100%; padding: 14px 18px;
+            background: rgba(10,6,20,0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Noto Serif SC', serif;
+            font-size: 15px; letter-spacing: 1px;
+            outline: none; transition: all 0.3s ease;
+        }
+        .mystic-input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(212,168,83,0.2);
+        }
+        .mystic-input::placeholder { color: rgba(232,213,183,0.3); }
+
+        .input-label {
+            display: block; margin-bottom: 10px;
+            font-size: 13px; color: var(--gold);
+            letter-spacing: 3px;
+        }
+
+        /* ===== 首页 ===== */
+        .home-title {
+            font-family: 'Cinzel', serif;
+            font-size: 64px; color: var(--gold);
+            letter-spacing: 12px;
+            text-shadow: 0 0 40px rgba(212,168,83,0.4), 0 0 80px rgba(212,168,83,0.2);
+            animation: titleGlow 3s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 40px rgba(212,168,83,0.4), 0 0 80px rgba(212,168,83,0.2); }
+            50% { text-shadow: 0 0 60px rgba(212,168,83,0.6), 0 0 120px rgba(212,168,83,0.3); }
+        }
+        .home-subtitle {
+            font-size: 14px; color: var(--text-secondary);
+            letter-spacing: 6px; margin-bottom: 60px;
+        }
+        .home-deck {
+            width: 140px; height: 220px;
+            position: relative; margin-bottom: 50px;
+        }
+        .home-deck .deck-card {
+            position: absolute; inset: 0;
+            border-radius: 12px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 220"><rect width="140" height="220" fill="%231a0a2e" rx="12"/><rect x="4" y="4" width="132" height="212" fill="none" stroke="%23d4a853" stroke-width="1" rx="10"/><circle cx="70" cy="110" r="30" fill="none" stroke="%23d4a853" stroke-width="1"/><path d="M70 80 L70 140 M40 110 L100 110" stroke="%23d4a853" stroke-width="0.5"/><circle cx="70" cy="110" r="8" fill="none" stroke="%23d4a853" stroke-width="0.5"/></svg>') center/cover;
+            border: 1px solid rgba(212,168,83,0.3);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+        }
+        .home-deck .deck-card:nth-child(1) { transform: rotate(-3deg) translateX(-2px); }
+        .home-deck .deck-card:nth-child(2) { transform: rotate(2deg) translateX(2px); }
+        .home-deck .deck-card:nth-child(3) { transform: rotate(-1deg); }
+
+        /* ===== 设置页 ===== */
+        .setup-container {
+            width: 100%; max-width: 420px;
+            display: flex; flex-direction: column;
+            gap: 24px;
+        }
+        .setup-title {
+            font-family: 'Cinzel', serif;
+            font-size: 24px; color: var(--gold);
+            text-align: center; letter-spacing: 6px;
+            margin-bottom: 8px;
+        }
+        .spread-options {
+            display: flex; gap: 12px;
+        }
+        .spread-option {
+            flex: 1; padding: 16px;
+            background: rgba(10,6,20,0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px; cursor: pointer;
+            text-align: center; transition: all 0.3s ease;
+        }
+        .spread-option:hover { border-color: rgba(212,168,83,0.4); }
+        .spread-option.selected {
+            border-color: var(--gold);
+            background: rgba(212,168,83,0.1);
+            box-shadow: 0 0 20px rgba(212,168,83,0.15);
+        }
+        .spread-option .option-title {
+            font-size: 15px; color: var(--text-primary);
+            font-weight: 600; margin-bottom: 4px;
+        }
+        .spread-option .option-desc {
+            font-size: 12px; color: var(--text-secondary);
+        }
+
+        /* ===== 洗牌页 ===== */
+        .shuffle-area {
+            width: 100%; max-width: 400px;
+            height: 320px; position: relative;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .shuffle-deck {
+            width: 150px; height: 240px;
+            position: relative; perspective: 1000px;
+        }
+        .shuffle-card {
+            position: absolute; inset: 0;
+            border-radius: 14px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 240"><rect width="150" height="240" fill="%231a0a2e" rx="14"/><rect x="6" y="6" width="138" height="228" fill="none" stroke="%23d4a853" stroke-width="1.2" rx="10"/><circle cx="75" cy="120" r="35" fill="none" stroke="%23d4a853" stroke-width="1"/><path d="M75 85 L75 155 M40 120 L110 120" stroke="%23d4a853" stroke-width="0.6"/><circle cx="75" cy="120" r="10" fill="none" stroke="%23d4a853" stroke-width="0.6"/></svg>') center/cover;
+            border: 1px solid rgba(212,168,83,0.35);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            backface-visibility: hidden;
+        }
+        .shuffle-hint {
+            position: absolute; bottom: 20px;
+            font-size: 13px; color: var(--text-secondary);
+            letter-spacing: 3px; text-align: center;
+        }
+        .shuffle-progress {
+            position: absolute; bottom: 60px;
+            width: 120px; height: 3px;
+            background: rgba(212,168,83,0.15);
+            border-radius: 3px; overflow: hidden;
+        }
+        .shuffle-progress-bar {
+            height: 100%; width: 0%;
+            background: var(--gold);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        .shuffle-count {
+            position: absolute; bottom: 70px;
+            font-size: 12px; color: var(--gold);
+            letter-spacing: 2px;
+        }
+
+        /* 洗牌动画 */
+        @keyframes shuffleLeft {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-30px) rotate(-8deg) scale(0.95); }
+            50% { transform: translateX(0) rotate(0deg); }
+            75% { transform: translateX(15px) rotate(4deg) scale(0.98); }
+            100% { transform: translateX(0) rotate(0deg); }
+        }
+        @keyframes shuffleRight {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(30px) rotate(8deg) scale(0.95); }
+            50% { transform: translateX(0) rotate(0deg); }
+            75% { transform: translateX(-15px) rotate(-4deg) scale(0.98); }
+            100% { transform: translateX(0) rotate(0deg); }
+        }
+        .shuffle-anim-left { animation: shuffleLeft 0.4s ease; }
+        .shuffle-anim-right { animation: shuffleRight 0.4s ease; }
+
+        /* ===== 抽牌页（手势轮播） ===== */
+        .draw-page {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding: 20px; overflow-y: auto;
+        }
+        .draw-header {
+            text-align: center; margin-bottom: 20px;
+        }
+        .draw-header .draw-title {
+            font-family: 'Cinzel', serif;
+            font-size: 22px; color: var(--gold);
+            letter-spacing: 6px; margin-bottom: 8px;
+        }
+        .draw-header .draw-subtitle {
+            font-size: 13px; color: var(--text-secondary);
+            letter-spacing: 2px;
+        }
+
+        /* 星光背景 */
+        .carousel-container {
+            position: relative;
+            width: 100%; max-width: 500px;
+            height: 360px;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            border-radius: 20px;
+            background: radial-gradient(ellipse at center, rgba(212,168,83,0.08) 0%, transparent 70%);
+        }
+        .star-field {
+            position: absolute; inset: 0;
+            pointer-events: none; overflow: hidden;
+        }
+        .star {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+        .star:nth-child(3n) { animation-duration: 1.5s; }
+        .star:nth-child(5n) { animation-duration: 2.5s; }
+        .star:nth-child(7n) { animation-duration: 3s; }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.5); box-shadow: 0 0 6px var(--gold); }
+        }
+        .star-trail {
+            position: absolute;
+            width: 60px; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.3;
+            animation: trailMove 4s linear infinite;
+        }
+        @keyframes trailMove {
+            0% { transform: translateX(-100px) rotate(15deg); opacity: 0; }
+            30% { opacity: 0.4; }
+            70% { opacity: 0.4; }
+            100% { transform: translateX(500px) rotate(15deg); opacity: 0; }
+        }
+
+        /* 抽取粒子爆炸特效 */
+        .particle-container {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .particle.gold {
+            background: radial-gradient(circle, #ffd700, #d4a853);
+            box-shadow: 0 0 8px #d4a853, 0 0 16px rgba(212,168,83,0.5);
+        }
+        .particle.spark {
+            background: #fff;
+            box-shadow: 0 0 6px #fff, 0 0 12px #d4a853;
+        }
+        .particle.star-shape {
+            background: transparent;
+            box-shadow: none;
+        }
+        .particle.star-shape::before {
+            content: '✦';
+            color: #d4a853;
+            font-size: 12px;
+            text-shadow: 0 0 8px #d4a853;
+        }
+        @keyframes particleBurst {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* 结果页星光飘落 */
+        .magic-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+            overflow: hidden;
+        }
+        .magic-star {
+            position: absolute;
+            color: #d4a853;
+            font-size: 16px;
+            text-shadow: 0 0 12px #d4a853, 0 0 24px rgba(212,168,83,0.5);
+            animation: magicFloat 3s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes magicFloat {
+            0% { transform: translateY(0) rotate(0deg) scale(0); opacity: 0; }
+            20% { transform: translateY(-20px) rotate(45deg) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-200px) rotate(180deg) scale(0); opacity: 0; }
+        }
+        .magic-ring {
+            position: absolute;
+            border: 2px solid rgba(212,168,83,0.4);
+            border-radius: 50%;
+            animation: ringExpand 2s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes ringExpand {
+            0% { transform: scale(0); opacity: 1; border-width: 3px; }
+            100% { transform: scale(4); opacity: 0; border-width: 0px; }
+        }
+
+        /* 结果卡牌光晕 */
+        .result-card-wrapper {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 12px;
+            animation: cardAppear 0.8s ease-out backwards;
+        }
+        .result-card-wrapper:nth-child(1) { animation-delay: 0s; }
+        .result-card-wrapper:nth-child(2) { animation-delay: 0.3s; }
+        .result-card-wrapper:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes cardAppear {
+            0% { transform: translateY(40px) scale(0.8); opacity: 0; }
+            50% { transform: translateY(-10px) scale(1.05); }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .result-flip-card {
+            width: 120px; height: 190px;
+            position: relative;
+        }
+        .result-flip-card .flip-card {
+            width: 100%; height: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(212,168,83,0.15), 0 0 40px rgba(138,92,200,0.1);
+            animation: cardGlow 3s ease-in-out infinite;
+        }
+        @keyframes cardGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(212,168,83,0.15), 0 0 40px rgba(138,92,200,0.1); }
+            50% { box-shadow: 0 0 30px rgba(212,168,83,0.3), 0 0 60px rgba(138,92,200,0.2), 0 0 80px rgba(212,168,83,0.1); }
+        }
+
+        /* 轮播卡牌抽取时的发光 */
+        .carousel-card.drawing {
+            animation: drawBurst 0.6s ease-out forwards;
+        }
+        @keyframes drawBurst {
+            0% { transform: scale(1); filter: brightness(1); }
+            30% { transform: scale(1.15); filter: brightness(2) drop-shadow(0 0 30px #d4a853); }
+            60% { transform: scale(1.1); filter: brightness(1.5) drop-shadow(0 0 50px #ffd700); }
+            100% { transform: scale(0) translateY(-100px); opacity: 0; filter: brightness(3); }
+        }
+
+        /* 卡牌轮播 */
+        .card-carousel {
+            position: relative;
+            width: 180px; height: 280px;
+            perspective: 1200px;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .carousel-card {
+            position: absolute;
+            width: 160px; height: 250px;
+            left: 10px; top: 15px;
+            border-radius: 14px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 250"><rect width="160" height="250" fill="%231a0a2e" rx="14"/><rect x="6" y="6" width="148" height="238" fill="none" stroke="%23d4a853" stroke-width="1.2" rx="10"/><circle cx="80" cy="125" r="38" fill="none" stroke="%23d4a853" stroke-width="1"/><path d="M80 87 L80 163 M42 125 L118 125" stroke="%23d4a853" stroke-width="0.6"/><circle cx="80" cy="125" r="12" fill="none" stroke="%23d4a853" stroke-width="0.6"/></svg>') center/cover;
+            border: 1px solid rgba(212,168,83,0.4);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, filter 0.3s ease;
+            cursor: grab;
+            backface-visibility: hidden;
+        }
+        .carousel-card:active { cursor: grabbing; }
+        .carousel-card.active {
+            transform: translateZ(50px) scale(1.05);
+            box-shadow: 0 0 40px rgba(212,168,83,0.3), 0 20px 60px rgba(0,0,0,0.6);
+            border-color: rgba(212,168,83,0.7);
+            z-index: 10;
+        }
+        .carousel-card.left {
+            transform: translateX(-140px) translateZ(-30px) rotateY(25deg) scale(0.85);
+            opacity: 0.5; filter: brightness(0.6);
+        }
+        .carousel-card.right {
+            transform: translateX(140px) translateZ(-30px) rotateY(-25deg) scale(0.85);
+            opacity: 0.5; filter: brightness(0.6);
+        }
+        .carousel-card.far-left {
+            transform: translateX(-220px) translateZ(-60px) rotateY(35deg) scale(0.7);
+            opacity: 0.2; filter: brightness(0.4);
+        }
+        .carousel-card.far-right {
+            transform: translateX(220px) translateZ(-60px) rotateY(-35deg) scale(0.7);
+            opacity: 0.2; filter: brightness(0.4);
+        }
+        .carousel-card.hidden {
+            transform: translateZ(-100px) scale(0.5);
+            opacity: 0;
+        }
+
+        /* 抽取动画 */
+        @keyframes drawUp {
+            0% { transform: translateZ(50px) scale(1.05); opacity: 1; }
+            50% { transform: translateY(-100px) translateZ(80px) scale(1.1); opacity: 0.8; }
+            100% { transform: translateY(-300px) translateZ(100px) scale(0.3); opacity: 0; }
+        }
+        .carousel-card.drawing {
+            animation: drawUp 0.6s ease forwards;
+        }
+
+        /* 提示区域 */
+        .draw-hint-area {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .draw-hint-area .swipe-hint {
+            font-size: 13px; color: var(--text-secondary);
+            letter-spacing: 2px; margin-bottom: 8px;
+        }
+        .draw-hint-area .swipe-arrow {
+            font-size: 24px; color: var(--gold);
+            animation: arrowBounce 1.5s ease-in-out infinite;
+        }
+        @keyframes arrowBounce {
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50% { transform: translateY(-8px); opacity: 1; }
+        }
+        .draw-progress {
+            margin-top: 12px;
+            font-size: 12px; color: var(--gold);
+            letter-spacing: 2px;
+        }
+        /* 已抽牌区域 */
+        .drawn-cards-area {
+            width: 100%; max-width: 600px;
+            min-height: 160px;
+            display: flex; flex-wrap: wrap;
+            align-items: center; justify-content: center;
+            gap: 16px; padding: 16px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            margin-top: 20px;
+        }
+        .drawn-card-slot {
+            width: 100px; height: 160px;
+            perspective: 1000px;
+            position: relative;
+        }
+        .drawn-card-slot .slot-label {
+            position: absolute; bottom: -20px; left: 0; right: 0;
+            text-align: center; font-size: 11px;
+            color: var(--gold); letter-spacing: 1px;
+        }
+
+        /* ===== 3D翻转卡牌 ===== */
+        .flip-card {
+            width: 100%; height: 100%;
+            position: relative; perspective: 1000px;
+            cursor: pointer;
+        }
+        .flip-card-inner {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-face {
+            position: absolute; inset: 0;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .flip-card-back {
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 190"><rect width="120" height="190" fill="%231a0a2e" rx="12"/><rect x="5" y="5" width="110" height="180" fill="none" stroke="%23d4a853" stroke-width="1" rx="8"/><circle cx="60" cy="95" r="28" fill="none" stroke="%23d4a853" stroke-width="0.8"/><path d="M60 67 L60 123 M32 95 L88 95" stroke="%23d4a853" stroke-width="0.5"/><circle cx="60" cy="95" r="9" fill="none" stroke="%23d4a853" stroke-width="0.5"/></svg>') center/cover;
+            border: 1px solid rgba(212,168,83,0.3);
+        }
+        .flip-card-front {
+            transform: rotateY(180deg);
+            background: linear-gradient(145deg, #1a0a2e, #2d1b4e);
+            border: 1px solid rgba(212,168,83,0.3);
+        }
+        .flip-card-front img {
+            width: 100%; height: 100%;
+            object-fit: cover; display: block;
+            border-radius: 12px;
+        }
+        .flip-card.reversed .flip-card-front {
+            transform: rotateY(180deg) rotate(180deg);
+        }
+
+        /* ===== 结果页 ===== */
+        .result-layout {
+            width: 100%; max-width: 900px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 30px;
+        }
+        .result-cards {
+            display: flex; justify-content: center;
+            gap: 30px; flex-wrap: wrap;
+        }
+        .result-card-wrapper {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 10px;
+        }
+        .result-card-wrapper .card-info {
+            text-align: center;
+        }
+        .result-card-wrapper .card-info .card-name {
+            font-size: 14px; color: var(--gold);
+            font-weight: 600; letter-spacing: 1px;
+        }
+        .result-card-wrapper .card-info .card-orientation {
+            font-size: 12px; color: var(--text-secondary);
+            margin-top: 3px;
+        }
+        .result-card-wrapper .position-name {
+            font-size: 13px; color: var(--gold);
+            letter-spacing: 3px;
+        }
+        .result-flip-card {
+            width: 150px; height: 240px;
+            perspective: 1000px;
+        }
+        .reading-box {
+            width: 100%; max-width: 700px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            line-height: 2;
+            font-size: 15px; color: var(--text-primary);
+            min-height: 120px;
+        }
+        .reading-box.loading {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 16px;
+        }
+        .loading-spinner {
+            width: 36px; height: 36px;
+            border: 2px solid rgba(212,168,83,0.2);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            font-size: 13px; color: var(--text-secondary);
+            letter-spacing: 3px;
+        }
+        .btn-group {
+            display: flex; gap: 16px; flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            .home-title { font-size: 42px; letter-spacing: 8px; }
+            .home-deck { width: 110px; height: 170px; }
+            .shuffle-deck { width: 120px; height: 190px; }
+            .drawn-card-slot { width: 100px; height: 160px; }
+            .result-flip-card { width: 120px; height: 190px; }
+            .glass-card { padding: 24px; }
+            .spread-options { flex-direction: column; }
+            .drawn-cards-area { min-height: 160px; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+
+    <!-- 首页 -->
+    <div id="page-home" class="page active">
+        <div class="home-title">塔罗</div>
+        <div class="home-subtitle">TAROT</div>
+        <div class="home-deck">
+            <div class="deck-card"></div>
+            <div class="deck-card"></div>
+            <div class="deck-card"></div>
+        </div>
+        <button class="mystic-btn" onclick="goToSetup()">开始占卜</button>
+    </div>
+
+    <!-- 设置页 -->
+    <div id="page-setup" class="page">
+        <div class="setup-container glass-card">
+            <div class="setup-title">选择牌阵</div>
+
+            <div>
+                <label class="input-label">你的问题（选填）</label>
+                <input type="text" id="question-input" class="mystic-input" placeholder="在此输入你想咨询的事情...">
+            </div>
+
+            <div>
+                <label class="input-label">牌阵</label>
+                <div class="spread-options">
+                    <div class="spread-option selected" data-spread="single" onclick="selectSpread(this)">
+                        <div class="option-title">单张牌</div>
+                        <div class="option-desc">当下指引</div>
+                    </div>
+                    <div class="spread-option" data-spread="three" onclick="selectSpread(this)">
+                        <div class="option-title">三张牌</div>
+                        <div class="option-desc">过去 · 现在 · 未来</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="mystic-btn" style="width: 100%;" onclick="goToShuffle()">进入洗牌</button>
+        </div>
+    </div>
+
+    <!-- 洗牌页 -->
+    <div id="page-shuffle" class="page">
+        <div class="shuffle-area">
+            <div class="shuffle-deck" id="shuffle-deck">
+                <div class="shuffle-card" id="shuffle-card-0"></div>
+                <div class="shuffle-card" id="shuffle-card-1" style="transform:translate(2px,2px)"></div>
+                <div class="shuffle-card" id="shuffle-card-2" style="transform:translate(-1px,3px)"></div>
+            </div>
+            <div class="shuffle-count" id="shuffle-count">洗牌 0 次</div>
+            <div class="shuffle-progress">
+                <div class="shuffle-progress-bar" id="shuffle-progress-bar"></div>
+            </div>
+            <div class="shuffle-hint">点击下方按钮开始洗牌</div>
+        </div>
+        <button class="mystic-btn" id="shuffle-btn" onclick="startShuffle()">开始洗牌</button>
+    </div>
+
+    <!-- 抽牌页（手势轮播） -->
+    <div id="page-draw" class="page draw-page">
+        <div class="draw-header">
+            <div class="draw-title">抽取你的牌</div>
+            <div class="draw-subtitle">左右滑动切换 · 向上滑动抽取</div>
+        </div>
+
+        <div class="carousel-container">
+            <div class="star-field" id="star-field"></div>
+            <div class="card-carousel" id="card-carousel"></div>
+        </div>
+
+        <div class="draw-hint-area">
+            <div class="swipe-hint">向上滑动抽取当前卡牌</div>
+            <div class="swipe-arrow">↑</div>
+            <div class="draw-progress" id="draw-progress">已抽取 0 / 1 张</div>
+        </div>
+
+        <div class="drawn-cards-area" id="drawn-cards-area">
+            <span style="color:var(--text-secondary);font-size:13px;">已抽取的牌将显示在此处</span>
+        </div>
+
+        <!-- 结果区域（抽取完成后显示） -->
+        <div id="draw-result-area" style="width:100%;max-width:700px;display:none;flex-direction:column;align-items:center;gap:24px;margin-top:20px;">
+            <div class="result-cards" id="result-cards" style="justify-content:center;gap:20px;flex-wrap:wrap;"></div>
+
+            <div class="btn-group" id="result-actions">
+                <button class="mystic-btn mystic-btn-small" onclick="generateReading()">获取解读</button>
+                <button class="mystic-btn mystic-btn-small" onclick="goToHome()" style="border-color:rgba(212,168,83,0.3);color:var(--text-secondary);">再次占卜</button>
+            </div>
+
+            <div class="reading-box" id="reading-box" style="display:none;width:100%;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://api.deepseek.com/v1/chat/completions';
+        const API_KEY = 'sk-4ee4b34abdca4e879e2627bac04a0816';
+
+        const TAROT_CARDS = [
+            { id: 0, name: '愚者', meaning_up: '新开始、纯真、冒险、自由精神', meaning_rev: '鲁莽、冒险失败、不负责任', file: 'm00.jpg' },
+            { id: 1, name: '魔术师', meaning_up: '创造力、技能、自信、意志力', meaning_rev: '欺骗、操控、缺乏自信', file: 'm01.jpg' },
+            { id: 2, name: '女祭司', meaning_up: '直觉、智慧、神秘、内省', meaning_rev: '隐藏、表面化、缺乏直觉', file: 'm02.jpg' },
+            { id: 3, name: '皇后', meaning_up: '丰饶、母性、美、创造力', meaning_rev: '依赖、过度保护、缺乏自律', file: 'm03.jpg' },
+            { id: 4, name: '皇帝', meaning_up: '权威、结构、父性、稳定', meaning_rev: '专制、僵化、缺乏灵活性', file: 'm04.jpg' },
+            { id: 5, name: '教皇', meaning_up: '信仰、传统、指引、教育', meaning_rev: '教条、盲目、非传统', file: 'm05.jpg' },
+            { id: 6, name: '恋人', meaning_up: '爱情、和谐、选择、吸引力', meaning_rev: '冲突、错误选择、不和谐', file: 'm06.jpg' },
+            { id: 7, name: '战车', meaning_up: '意志、胜利、前进、控制', meaning_rev: '失控、失败、缺乏方向', file: 'm07.jpg' },
+            { id: 8, name: '力量', meaning_up: '勇气、内心力量、耐心、控制', meaning_rev: '软弱、自我怀疑、失控', file: 'm08.jpg' },
+            { id: 9, name: '隐士', meaning_up: '内省、孤独、智慧、指引', meaning_rev: '孤立、拒绝帮助、缺乏方向', file: 'm09.jpg' },
+            { id: 10, name: '命运之轮', meaning_up: '变化、命运、周期、好运', meaning_rev: '抗拒变化、厄运、停滞', file: 'm10.jpg' },
+            { id: 11, name: '正义', meaning_up: '公正、真理、平衡、法律', meaning_rev: '不公、偏见、失衡', file: 'm11.jpg' },
+            { id: 12, name: '倒吊人', meaning_up: '牺牲、等待、新视角、放下', meaning_rev: '拖延、抗拒、牺牲不值得', file: 'm12.jpg' },
+            { id: 13, name: '死神', meaning_up: '结束、转变、重生、释放', meaning_rev: '抗拒改变、停滞、恐惧', file: 'm13.jpg' },
+            { id: 14, name: '节制', meaning_up: '平衡、耐心、融合、适度', meaning_rev: '过度、失衡、缺乏耐心', file: 'm14.jpg' },
+            { id: 15, name: '恶魔', meaning_up: '束缚、阴影、诱惑、物质主义', meaning_rev: '解脱、面对恐惧、自由', file: 'm15.jpg' },
+            { id: 16, name: '塔', meaning_up: '突变、破坏、觉醒、解放', meaning_rev: '抗拒变化、恐惧、逃避', file: 'm16.jpg' },
+            { id: 17, name: '星星', meaning_up: '希望、灵感、宁静、疗愈', meaning_rev: '失望、缺乏信念、焦虑', file: 'm17.jpg' },
+            { id: 18, name: '月亮', meaning_up: '幻觉、潜意识、不安、直觉', meaning_rev: '混乱、恐惧、误解', file: 'm18.jpg' },
+            { id: 19, name: '太阳', meaning_up: '快乐、成功、活力、明朗', meaning_rev: '消极、延迟、缺乏快乐', file: 'm19.jpg' },
+            { id: 20, name: '审判', meaning_up: '重生、召唤、觉醒、宽恕', meaning_rev: '自我怀疑、拒绝、缺乏成长', file: 'm20.jpg' },
+            { id: 21, name: '世界', meaning_up: '完成、整合、成就、旅行', meaning_rev: '未完成、停滞、缺乏 closure', file: 'm21.jpg' },
+            { id: 22, name: '权杖ACE', meaning_up: '创意、新开始、热情、行动', meaning_rev: '延迟、缺乏热情、犹豫', file: 'w01.jpg' },
+            { id: 23, name: '权杖二', meaning_up: '计划、远见、选择、自信', meaning_rev: '缺乏远见、犹豫、不安全感', file: 'w02.jpg' },
+            { id: 24, name: '权杖三', meaning_up: '探索、远见、扩张、成功', meaning_rev: '缺乏规划、退缩、失败', file: 'w03.jpg' },
+            { id: 25, name: '权杖四', meaning_up: '庆祝、稳定、成功、和谐', meaning_rev: '不稳定、延迟、冲突', file: 'w04.jpg' },
+            { id: 26, name: '权杖五', meaning_up: '冲突、竞争、挑战、勇气', meaning_rev: '和平、妥协、退缩', file: 'w05.jpg' },
+            { id: 27, name: '权杖六', meaning_up: '胜利、认可、成功、自信', meaning_rev: '傲慢、失败、缺乏谦逊', file: 'w06.jpg' },
+            { id: 28, name: '权杖七', meaning_up: '防御、勇气、坚持、策略', meaning_rev: '退缩、放弃、缺乏勇气', file: 'w07.jpg' },
+            { id: 29, name: '权杖八', meaning_up: '快速行动、消息、旅行、敏捷', meaning_rev: '延迟、障碍、犹豫不决', file: 'w08.jpg' },
+            { id: 30, name: '权杖九', meaning_up: '警惕、防御、经验、自信', meaning_rev: '恐惧、过度保护、缺乏自信', file: 'w09.jpg' },
+            { id: 31, name: '权杖十', meaning_up: '负担、责任、压力、坚持', meaning_rev: '释放、委托、放弃', file: 'w10.jpg' },
+            { id: 32, name: '权杖侍从', meaning_up: '好奇心、热情、学习、新消息', meaning_rev: '浮躁、缺乏承诺、不专注', file: 'w11.jpg' },
+            { id: 33, name: '权杖骑士', meaning_up: '行动力、勇气、冒险、热情', meaning_rev: '鲁莽、失控、缺乏计划', file: 'w12.jpg' },
+            { id: 34, name: '权杖皇后', meaning_up: '热情、领导力、创造力、自信', meaning_rev: '情绪化、控制欲、缺乏耐心', file: 'w13.jpg' },
+            { id: 35, name: '权杖国王', meaning_up: '权威、自信、领导力、勇气', meaning_rev: '专制、冲动、缺乏智慧', file: 'w14.jpg' },
+            { id: 36, name: '圣杯ACE', meaning_up: '爱、新感情、直觉、情感', meaning_rev: '情感阻塞、失望、缺乏爱', file: 'c01.jpg' },
+            { id: 37, name: '圣杯二', meaning_up: '合作、友谊、平衡、和谐', meaning_rev: '失衡、冲突、缺乏沟通', file: 'c02.jpg' },
+            { id: 38, name: '圣杯三', meaning_up: '庆祝、友谊、快乐、分享', meaning_rev: '过度放纵、纷争、不真诚', file: 'c03.jpg' },
+            { id: 39, name: '圣杯四', meaning_up: '沉思、内省、拒绝、不满', meaning_rev: '无聊、错过机会、缺乏感恩', file: 'c04.jpg' },
+            { id: 40, name: '圣杯五', meaning_up: '悲伤、失落、失望、内省', meaning_rev: '接受、新希望、恢复', file: 'c05.jpg' },
+            { id: 41, name: '圣杯六', meaning_up: '回忆、关怀、馈赠、和谐', meaning_rev: '依赖、不成熟、缺乏成长', file: 'c06.jpg' },
+            { id: 42, name: '圣杯七', meaning_up: '幻想、选择、欲望、内省', meaning_rev: '错觉、迷失、缺乏现实感', file: 'c07.jpg' },
+            { id: 43, name: '圣杯八', meaning_up: '放弃、离开、寻找、成长', meaning_rev: '犹豫不决、恐惧、缺乏勇气', file: 'c08.jpg' },
+            { id: 44, name: '圣杯九', meaning_up: '满足、成就感、享受、自信', meaning_rev: '不满、自满、缺乏感恩', file: 'c09.jpg' },
+            { id: 45, name: '圣杯十', meaning_up: '家庭、幸福、和谐、圆满', meaning_rev: '家庭问题、冲突、不和谐', file: 'c10.jpg' },
+            { id: 46, name: '圣杯侍从', meaning_up: '情感、直觉、敏感、新感情', meaning_rev: '情绪化、不诚实、缺乏成熟', file: 'c11.jpg' },
+            { id: 47, name: '圣杯骑士', meaning_up: '浪漫、温柔、梦想、情感', meaning_rev: '不切实际、情绪化、缺乏行动', file: 'c12.jpg' },
+            { id: 48, name: '圣杯皇后', meaning_up: '温柔、关怀、直觉、情感丰富', meaning_rev: '过度情绪化、依赖、缺乏边界', file: 'c13.jpg' },
+            { id: 49, name: '圣杯国王', meaning_up: '仁慈、智慧、情感稳定、关怀', meaning_rev: '情绪化、优柔寡断、缺乏行动力', file: 'c14.jpg' },
+            { id: 50, name: '宝剑ACE', meaning_up: '想法、沟通、新思维、清晰', meaning_rev: '混乱、误解、缺乏 clarity', file: 's01.jpg' },
+            { id: 51, name: '宝剑二', meaning_up: '平衡、选择、保护、冷静', meaning_rev: '犹豫不决、逃避、缺乏决策', file: 's02.jpg' },
+            { id: 52, name: '宝剑三', meaning_up: '悲伤、心碎、背叛、痛苦', meaning_rev: '疗愈、接受、恢复', file: 's03.jpg' },
+            { id: 53, name: '宝剑四', meaning_up: '休息、撤退、内省、恢复', meaning_rev: '无法放松、焦虑、缺乏休息', file: 's04.jpg' },
+            { id: 54, name: '宝剑五', meaning_up: '冲突、胜利、自私、策略', meaning_rev: '和解、妥协、缺乏竞争', file: 's05.jpg' },
+            { id: 55, name: '宝剑六', meaning_up: '疗愈、过渡、旅行、和平', meaning_rev: '停滞、拒绝改变、缺乏进展', file: 's06.jpg' },
+            { id: 56, name: '宝剑七', meaning_up: '策略、机智、秘密、逃避', meaning_rev: '欺骗、不诚实、缺乏道德', file: 's07.jpg' },
+            { id: 57, name: '宝剑八', meaning_up: '限制、束缚、盲点、内省', meaning_rev: '释放、新视角、自由', file: 's08.jpg' },
+            { id: 58, name: '宝剑九', meaning_up: '焦虑、恐惧、失眠、内省', meaning_rev: '解脱、勇气、平静', file: 's09.jpg' },
+            { id: 59, name: '宝剑十', meaning_up: '结束、痛苦、释放、转变', meaning_rev: '新开始、恢复、拒绝结束', file: 's10.jpg' },
+            { id: 60, name: '宝剑侍从', meaning_up: '好奇心、学习、沟通、新想法', meaning_rev: '八卦、不诚实、缺乏深度', file: 's11.jpg' },
+            { id: 61, name: '宝剑骑士', meaning_up: '敏捷、思维、辩论、行动', meaning_rev: '冲动、鲁莽、缺乏思考', file: 's12.jpg' },
+            { id: 62, name: '宝剑皇后', meaning_up: '智慧、独立、公正、理性', meaning_rev: '刻薄、冷酷、缺乏同理心', file: 's13.jpg' },
+            { id: 63, name: '宝剑国王', meaning_up: '逻辑、权威、公正、智慧', meaning_rev: '残忍、专制、缺乏仁慈', file: 's14.jpg' },
+            { id: 64, name: '星币ACE', meaning_up: '财富、机会、物质、新开始', meaning_rev: '贪婪、错失机会、缺乏远见', file: 'p01.jpg' },
+            { id: 65, name: '星币二', meaning_up: '平衡、选择、适应、灵活性', meaning_rev: '失衡、犹豫不决、缺乏决断', file: 'p02.jpg' },
+            { id: 66, name: '星币三', meaning_up: '合作、技能、学习、团队', meaning_rev: '孤立、缺乏合作、傲慢', file: 'p03.jpg' },
+            { id: 67, name: '星币四', meaning_up: '稳定、安全、储蓄、保守', meaning_rev: '贪婪、吝啬、缺乏分享', file: 'p04.jpg' },
+            { id: 68, name: '星币五', meaning_up: '贫穷、困难、缺乏、内省', meaning_rev: '希望、援助、恢复', file: 'p05.jpg' },
+            { id: 69, name: '星币六', meaning_up: '慷慨、慈善、平衡、公正', meaning_rev: '不平等、傲慢、缺乏同理心', file: 'p06.jpg' },
+            { id: 70, name: '星币七', meaning_up: '评估、反思、耐心、规划', meaning_rev: '拖延、不确定、缺乏决策', file: 'p07.jpg' },
+            { id: 71, name: '星币八', meaning_up: '专注、技能、勤奋、成长', meaning_rev: '缺乏专注、马虎、停滞', file: 'p08.jpg' },
+            { id: 72, name: '星币九', meaning_up: '成功、独立、富足、自信', meaning_rev: '依赖、缺乏安全感、贪婪', file: 'p09.jpg' },
+            { id: 73, name: '星币十', meaning_up: '财富、家庭、继承、稳定', meaning_rev: '家庭纷争、损失、缺乏和谐', file: 'p10.jpg' },
+            { id: 74, name: '星币侍从', meaning_up: '务实、学习、耐心、新机会', meaning_rev: '懒惰、缺乏方向、不切实际', file: 'p11.jpg' },
+            { id: 75, name: '星币骑士', meaning_up: '稳定、可靠、勤奋、耐心', meaning_rev: '固执、贪婪、缺乏灵活性', file: 'p12.jpg' },
+            { id: 76, name: '星币皇后', meaning_up: '丰盛、稳定、关怀、务实', meaning_rev: '过度物质主义、缺乏情感', file: 'p13.jpg' },
+            { id: 77, name: '星币国王', meaning_up: '成功、权威、慷慨、务实', meaning_rev: '贪婪、专制、缺乏远见', file: 'p14.jpg' }
+        ];
+
+        let currentSpread = 'single';
+        let userQuestion = '';
+        let drawnCards = [];
+        let cardsToDraw = 1;
+        let shuffledDeck = [];
+        let shuffleCount = 0;
+        let carouselIndex = 0;
+        let carouselCards = [];
+
+        // ===== 页面切换 =====
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function goToHome() {
+            userQuestion = ''; drawnCards = []; shuffleCount = 0;
+            document.getElementById('question-input').value = '';
+            showPage('page-home');
+        }
+
+        function goToSetup() {
+            showPage('page-setup');
+        }
+
+        function selectSpread(el) {
+            document.querySelectorAll('.spread-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            currentSpread = el.dataset.spread;
+        }
+
+        // ===== 洗牌（自动动画） =====
+        function goToShuffle() {
+            userQuestion = document.getElementById('question-input').value.trim();
+            cardsToDraw = currentSpread === 'single' ? 1 : 3;
+            drawnCards = [];
+            shuffleCount = 0;
+            shuffledDeck = shuffleArray([...TAROT_CARDS]);
+
+            document.getElementById('shuffle-count').textContent = '洗牌 0 次';
+            document.getElementById('shuffle-progress-bar').style.width = '0%';
+            document.getElementById('shuffle-btn').disabled = false;
+            document.getElementById('shuffle-btn').textContent = '开始洗牌';
+            showPage('page-shuffle');
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function startShuffle() {
+            const btn = document.getElementById('shuffle-btn');
+            btn.disabled = true;
+            btn.textContent = '洗牌中...';
+
+            let count = 0;
+            const targetCount = 5;
+            const interval = setInterval(() => {
+                count++;
+                shuffleCount++;
+                const deck = document.getElementById('shuffle-deck');
+                const dir = Math.random() > 0.5 ? 'left' : 'right';
+                deck.classList.remove('shuffle-anim-left', 'shuffle-anim-right');
+                void deck.offsetWidth;
+                deck.classList.add(dir === 'left' ? 'shuffle-anim-left' : 'shuffle-anim-right');
+
+                document.getElementById('shuffle-count').textContent = `洗牌 ${shuffleCount} 次`;
+                document.getElementById('shuffle-progress-bar').style.width = Math.min(shuffleCount * 20, 100) + '%';
+
+                if (count >= targetCount) {
+                    clearInterval(interval);
+                    setTimeout(() => goToDraw(), 500);
+                }
+            }, 500);
+        }
+
+        // ===== 抽牌页（手势轮播） =====
+        function goToDraw() {
+            showPage('page-draw');
+            initStarField();
+            initCardCarousel();
+            updateDrawProgress();
+        }
+
+        // 鼠标/触摸手势：左右滑动切换，向上滑动抽取
+        function initCarouselGestures(container) {
+            let startX = 0, startY = 0, lastX = 0, lastY = 0;
+            let isDragging = false;
+
+            const onStart = (x, y) => {
+                startX = lastX = x;
+                startY = lastY = y;
+                isDragging = true;
+            };
+            const onMove = (x, y) => {
+                if (!isDragging) return;
+                lastX = x;
+                lastY = y;
+            };
+            const onEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                const dx = lastX - startX;
+                const dy = lastY - startY;
+                const absDx = Math.abs(dx);
+                const absDy = Math.abs(dy);
+
+                if (absDy > absDx && dy < -60) {
+                    drawCurrentCard();
+                } else if (absDx > absDy && absDx > 40) {
+                    if (dx > 0) {
+                        carouselIndex = (carouselIndex - 1 + shuffledDeck.length) % shuffledDeck.length;
+                    } else {
+                        carouselIndex = (carouselIndex + 1) % shuffledDeck.length;
+                    }
+                    updateCarousel();
+                }
+            };
+
+            container.ontouchstart = (e) => { e.preventDefault(); onStart(e.touches[0].clientX, e.touches[0].clientY); };
+            container.ontouchmove = (e) => { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); };
+            container.ontouchend = (e) => { e.preventDefault(); onEnd(); };
+
+            container.onmousedown = (e) => {
+                onStart(e.clientX, e.clientY);
+                const mm = (me) => onMove(me.clientX, me.clientY);
+                const mu = () => { onEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); };
+                window.addEventListener('mousemove', mm);
+                window.addEventListener('mouseup', mu);
+            };
+        }
+
+        // 星光特效
+        function initStarField() {
+            const container = document.getElementById('star-field');
+            container.innerHTML = '';
+            for (let i = 0; i < 40; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.width = (Math.random() * 2 + 1) + 'px';
+                star.style.height = star.style.width;
+                container.appendChild(star);
+            }
+            for (let i = 0; i < 3; i++) {
+                const trail = document.createElement('div');
+                trail.className = 'star-trail';
+                trail.style.top = (20 + Math.random() * 60) + '%';
+                trail.style.animationDelay = (i * 1.5) + 's';
+                trail.style.animationDuration = (3 + Math.random() * 2) + 's';
+                container.appendChild(trail);
+            }
+        }
+
+        // 粒子爆炸特效
+        function createParticleBurst(x, y) {
+            const container = document.createElement('div');
+            container.className = 'particle-container';
+            container.style.left = x + 'px';
+            container.style.top = y + 'px';
+            document.body.appendChild(container);
+
+            const types = ['gold', 'spark', 'star-shape'];
+            const count = 30;
+
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                const type = types[Math.floor(Math.random() * types.length)];
+                p.className = 'particle ' + type;
+                const size = Math.random() * 6 + 3;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+                const distance = Math.random() * 150 + 50;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                p.style.setProperty('--tx', tx + 'px');
+                p.style.setProperty('--ty', ty + 'px');
+                p.style.animation = `particleBurst ${0.6 + Math.random() * 0.4}s ease-out forwards`;
+                p.style.animationDelay = Math.random() * 0.1 + 's';
+
+                container.appendChild(p);
+            }
+
+            // 中心闪光
+            const flash = document.createElement('div');
+            flash.style.cssText = 'position:absolute;left:-30px;top:-30px;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,#ffd700,#d4a853,transparent);animation:particleBurst 0.4s ease-out forwards;';
+            flash.style.setProperty('--tx', '0px');
+            flash.style.setProperty('--ty', '0px');
+            container.appendChild(flash);
+
+            setTimeout(() => container.remove(), 1200);
+        }
+
+        // 结果页魔法星光飘落
+        function createMagicEffect() {
+            const overlay = document.createElement('div');
+            overlay.className = 'magic-overlay';
+            document.body.appendChild(overlay);
+
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            // 扩散光环
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const ring = document.createElement('div');
+                    ring.className = 'magic-ring';
+                    ring.style.left = (centerX - 50) + 'px';
+                    ring.style.top = (centerY - 50) + 'px';
+                    ring.style.width = '100px';
+                    ring.style.height = '100px';
+                    overlay.appendChild(ring);
+                    setTimeout(() => ring.remove(), 2500);
+                }, i * 400);
+            }
+
+            // 星光飘落
+            const starSymbols = ['✦', '✧', '★', '☆', '✨', '⋆', '·'];
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.className = 'magic-star';
+                    star.textContent = starSymbols[Math.floor(Math.random() * starSymbols.length)];
+                    star.style.left = (Math.random() * window.innerWidth) + 'px';
+                    star.style.top = (centerY + Math.random() * 200 - 100) + 'px';
+                    star.style.fontSize = (Math.random() * 12 + 8) + 'px';
+                    star.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    star.style.animationDelay = Math.random() * 0.3 + 's';
+                    overlay.appendChild(star);
+                    setTimeout(() => star.remove(), 4000);
+                }, i * 50);
+            }
+
+            // 金色粒子从卡牌位置升起
+            const cardPositions = document.querySelectorAll('.result-card-wrapper');
+            cardPositions.forEach((card, idx) => {
+                setTimeout(() => {
+                    const rect = card.getBoundingClientRect();
+                    for (let i = 0; i < 15; i++) {
+                        setTimeout(() => {
+                            const p = document.createElement('div');
+                            p.className = 'magic-star';
+                            p.style.cssText = 'width:4px;height:4px;border-radius:50%;background:#d4a853;box-shadow:0 0 8px #d4a853;';
+                            p.style.left = (rect.left + rect.width / 2 + (Math.random() - 0.5) * 80) + 'px';
+                            p.style.top = (rect.top + rect.height / 2) + 'px';
+                            p.style.animation = `magicFloat ${1.5 + Math.random()}s ease-out forwards`;
+                            overlay.appendChild(p);
+                            setTimeout(() => p.remove(), 3000);
+                        }, i * 30);
+                    }
+                }, idx * 300);
+            });
+
+            setTimeout(() => overlay.remove(), 6000);
+        }
+
+        // 卡牌轮播
+        function initCardCarousel() {
+            const container = document.getElementById('card-carousel');
+            container.innerHTML = '';
+            carouselCards = [];
+            carouselIndex = Math.floor(Math.random() * shuffledDeck.length);
+
+            // 创建所有卡牌元素（只显示牌背）
+            shuffledDeck.forEach((card, i) => {
+                const el = document.createElement('div');
+                el.className = 'carousel-card';
+                el.dataset.index = i;
+                container.appendChild(el);
+                carouselCards.push(el);
+            });
+
+            updateCarousel();
+            initCarouselGestures(container);
+        }
+
+        function updateCarousel() {
+            carouselCards.forEach((el, i) => {
+                el.classList.remove('active', 'left', 'right', 'far-left', 'far-right', 'hidden');
+                const diff = i - carouselIndex;
+                if (diff === 0) {
+                    el.classList.add('active');
+                } else if (diff === -1 || (diff === shuffledDeck.length - 1)) {
+                    el.classList.add('left');
+                } else if (diff === 1 || (diff === -(shuffledDeck.length - 1))) {
+                    el.classList.add('right');
+                } else if (diff === -2 || (diff === shuffledDeck.length - 2)) {
+                    el.classList.add('far-left');
+                } else if (diff === 2 || (diff === -(shuffledDeck.length - 2))) {
+                    el.classList.add('far-right');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        // 轮播手势
+        function initCarouselGestures(container) {
+            let startX = 0, startY = 0, lastX = 0, lastY = 0;
+            let isDragging = false;
+
+            const onStart = (x, y) => {
+                startX = lastX = x;
+                startY = lastY = y;
+                isDragging = true;
+            };
+            const onMove = (x, y) => {
+                if (!isDragging) return;
+                lastX = x;
+                lastY = y;
+            };
+            const onEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                const dx = lastX - startX;
+                const dy = lastY - startY;
+                const absDx = Math.abs(dx);
+                const absDy = Math.abs(dy);
+
+                if (absDy > absDx && dy < -60) {
+                    // 向上滑动 - 抽取
+                    drawCurrentCard();
+                } else if (absDx > absDy && absDx > 40) {
+                    // 左右滑动 - 切换
+                    if (dx > 0) {
+                        carouselIndex = (carouselIndex - 1 + shuffledDeck.length) % shuffledDeck.length;
+                    } else {
+                        carouselIndex = (carouselIndex + 1) % shuffledDeck.length;
+                    }
+                    updateCarousel();
+                }
+            };
+
+            // Touch
+            container.ontouchstart = (e) => { e.preventDefault(); onStart(e.touches[0].clientX, e.touches[0].clientY); };
+            container.ontouchmove = (e) => { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); };
+            container.ontouchend = (e) => { e.preventDefault(); onEnd(); };
+
+            // Mouse
+            container.onmousedown = (e) => {
+                onStart(e.clientX, e.clientY);
+                const mm = (me) => onMove(me.clientX, me.clientY);
+                const mu = () => { onEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); };
+                window.addEventListener('mousemove', mm);
+                window.addEventListener('mouseup', mu);
+            };
+        }
+
+        function drawCurrentCard() {
+            if (drawnCards.length >= cardsToDraw) return;
+
+            const cardData = shuffledDeck[carouselIndex];
+            const isReversed = Math.random() < 0.5;
+            drawnCards.push({ ...cardData, isReversed });
+
+            // 当前卡牌抽取动画 + 粒子爆炸
+            const activeCard = carouselCards[carouselIndex];
+            if (activeCard) {
+                const rect = activeCard.getBoundingClientRect();
+                createParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                activeCard.classList.add('drawing');
+                setTimeout(() => {
+                    activeCard.style.display = 'none';
+                    carouselIndex = carouselIndex % shuffledDeck.length;
+                    updateCarousel();
+                }, 600);
+            }
+
+            addDrawnCard(cardData, isReversed, drawnCards.length - 1);
+            updateDrawProgress();
+
+            if (drawnCards.length >= cardsToDraw) {
+                setTimeout(() => showResultInDrawPage(), 1200);
+            }
+        }
+
+        function updateDrawProgress() {
+            document.getElementById('draw-progress').textContent = `已抽取 ${drawnCards.length} / ${cardsToDraw} 张`;
+        }
+
+        function showResultInDrawPage() {
+            // 隐藏轮播、提示和已抽牌区域
+            document.querySelector('.carousel-container').style.display = 'none';
+            document.querySelector('.draw-hint-area').style.display = 'none';
+            document.getElementById('draw-progress').style.display = 'none';
+            document.getElementById('drawn-cards-area').style.display = 'none';
+
+            // 显示结果区域
+            const resultArea = document.getElementById('draw-result-area');
+            resultArea.style.display = 'flex';
+
+            // 渲染结果卡牌
+            renderResultCards();
+
+            // 触发魔法星光特效
+            setTimeout(() => createMagicEffect(), 300);
+
+            // 滚动到结果区域
+            resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function addDrawnCard(cardData, isReversed, index) {
+            const area = document.getElementById('drawn-cards-area');
+            if (index === 0) area.innerHTML = '';
+
+            const slot = document.createElement('div');
+            slot.className = 'drawn-card-slot';
+            const labels = currentSpread === 'single' ? [''] : ['过去', '现在', '未来'];
+            slot.innerHTML = `
+                <div class="flip-card" id="drawn-flip-${index}" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-face flip-card-back"></div>
+                        <div class="flip-card-face flip-card-front">
+                            <img src="cards/${cardData.file}" alt="${cardData.name}" onerror="this.style.display='none'">
+                        </div>
+                    </div>
+                </div>
+                ${labels[index] ? `<span class="slot-label">${labels[index]}</span>` : ''}
+            `;
+            if (isReversed) {
+                setTimeout(() => {
+                    const el = document.getElementById(`drawn-flip-${index}`);
+                    if (el) el.classList.add('reversed');
+                }, 10);
+            }
+            area.appendChild(slot);
+        }
+
+        function flipCard(el) {
+            if (el.classList.contains('flipped')) return;
+            el.classList.add('flipped');
+        }
+
+        function renderResultCards() {
+            const container = document.getElementById('result-cards');
+            container.innerHTML = '';
+            const positions = currentSpread === 'single' ? [''] : ['过去', '现在', '未来'];
+
+            drawnCards.forEach((card, i) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'result-card-wrapper';
+                wrapper.innerHTML = `
+                    <div class="result-flip-card">
+                        <div class="flip-card flipped ${card.isReversed ? 'reversed' : ''}">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-face flip-card-front">
+                                    <img src="cards/${card.file}" alt="${card.name}" onerror="this.style.display='none'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-info">
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-orientation">${card.isReversed ? '逆位' : '正位'}</div>
+                    </div>
+                    ${positions[i] ? `<div class="position-name">${positions[i]}</div>` : ''}
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        // ===== AI 解读 =====
+        async function generateReading() {
+            const box = document.getElementById('reading-box');
+            box.style.display = 'block';
+            box.classList.add('loading');
+            box.innerHTML = '<div class="loading-spinner"></div><div class="loading-text">正在连接星辰的智慧</div>';
+
+            const cardsText = drawnCards.map(c =>
+                `${c.name}（${c.isReversed ? '逆位' : '正位'}）`
+            ).join('、');
+
+            const prompt = `你是一位拥有千年智慧的塔罗牌占卜师。请根据以下信息进行解读：
+
+用户问题：${userQuestion || '无具体问题，寻求指引'}
+抽到的牌：${cardsText}
+
+请用神秘、优雅、温暖的语言写一篇完整的中文解读文章（不要分段，不要用标题分隔，不要用特殊符号）。直接以流畅的散文形式，将每张牌的含义和整体综合解读融合在一起，给出温暖有洞察力的建议。保持400-600字。`;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [
+                            { role: 'system', content: '你是一位资深的塔罗牌占卜师，请根据用户的问题和抽到的牌（含正逆位）给出温暖、有洞察力的中文解读。' },
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.8, max_tokens: 1200
+                    })
+                });
+                const data = await res.json();
+                box.classList.remove('loading');
+                if (data.choices && data.choices[0]) {
+                    // 清理所有特殊符号
+                    let text = data.choices[0].message.content;
+                    text = text.replace(/\*\*/g, '');        // 移除 **
+                    text = text.replace(/#+/g, '');          // 移除 #
+                    text = text.replace(/---+/g, '');        // 移除 ---
+                    text = text.replace(/\n{3,}/g, '\n\n');  // 多个换行改为两个
+                    text = text.replace(/\n/g, '<br>');      // 换行转为 br
+                    box.innerHTML = text;
+                } else {
+                    generateLocalReading(box);
+                }
+            } catch (e) {
+                box.classList.remove('loading');
+                generateLocalReading(box);
+            }
+        }
+
+        function generateLocalReading(box) {
+            let reading = '';
+            const positions = currentSpread === 'single' ? ['指引'] : ['过去', '现在', '未来'];
+            drawnCards.forEach((card, i) => {
+                const meaning = card.isReversed ? card.meaning_rev : card.meaning_up;
+                reading += `<strong style="color:var(--gold)">${positions[i]} · ${card.name}</strong>（${card.isReversed ? '逆位' : '正位'}）<br>${meaning}<br><br>`;
+            });
+            reading += `<strong style="color:var(--gold)">星辰启示：</strong><br>`;
+            if (currentSpread === 'three') {
+                reading += '三张牌编织出你生命的时间之网。过去的经历如星辰般在夜空中闪烁，照亮了现在的道路；而此刻的选择，将如种子般在未来的土壤中生根发芽。相信宇宙的安排，你所经历的一切都有其深远的意义。';
+            } else {
+                reading += '这张牌是宇宙透过星辰传递给你的讯息。它如同一面古老的镜子，映照出你内心深处的真实。静心聆听，答案早已在你的灵魂中回响。';
+            }
+            if (userQuestion) {
+                reading += `<br><br>关于你的问题「${userQuestion}」，塔罗建议你保持内心的平静与觉察。命运之轮正在转动，保持开放的心态，让直觉引导你前行。`;
+            }
+            box.innerHTML = reading;
+        }
+
+        // ===== 粒子背景 =====
+        function initParticles() {
+            const canvas = document.getElementById('particles');
+            const ctx = canvas.getContext('2d');
+            let w = window.innerWidth, h = window.innerHeight;
+            canvas.width = w; canvas.height = h;
+
+            // 星星
+            const stars = [];
+            const starCount = Math.min(200, Math.floor(w * h / 8000));
+
+            for (let i = 0; i < starCount; i++) {
+                // 创建银河带效果：大部分星星集中在屏幕中央的对角线区域
+                let x, y;
+                const inGalaxy = Math.random() < 0.6;
+                if (inGalaxy) {
+                    // 银河带：从左下到右上的弧形分布
+                    const t = Math.random();
+                    x = t * w + (Math.random() - 0.5) * w * 0.4;
+                    y = h - t * h + (Math.random() - 0.5) * h * 0.25;
+                    x += Math.sin(t * Math.PI * 2) * 80;  // 弧形偏移
+                } else {
+                    x = Math.random() * w;
+                    y = Math.random() * h;
+                }
+
+                stars.push({
+                    x, y,
+                    baseX: x, baseY: y,
+                    size: Math.random() * 2 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.15,
+                    vy: (Math.random() - 0.5) * 0.15,
+                    alpha: Math.random() * 0.6 + 0.2,
+                    pulse: Math.random() * Math.PI * 2,
+                    pulseSpeed: 0.01 + Math.random() * 0.03,
+                    hue: Math.random() < 0.3 ? 45 : (Math.random() < 0.6 ? 200 : 280),  // 金色、蓝色、紫色
+                    brightness: Math.random()
+                });
+            }
+
+            // 流星
+            const meteors = [];
+            function createMeteor() {
+                meteors.push({
+                    x: Math.random() * w * 0.5,
+                    y: Math.random() * h * 0.3,
+                    length: 80 + Math.random() * 60,
+                    speed: 8 + Math.random() * 6,
+                    alpha: 1
+                });
+            }
+
+            // 星云
+            const nebulae = [];
+            for (let i = 0; i < 3; i++) {
+                nebulae.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    radius: 100 + Math.random() * 150,
+                    alpha: 0.03 + Math.random() * 0.02,
+                    hue: [260, 280, 200][i],
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    pulse: Math.random() * Math.PI * 2
+                });
+            }
+
+            let time = 0;
+            let lastMeteor = 0;
+
+            function animate() {
+                time += 0.016;
+
+                // 深空背景渐变
+                const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h));
+                grad.addColorStop(0, 'rgba(15, 10, 30, 0.3)');
+                grad.addColorStop(0.5, 'rgba(8, 5, 20, 0.2)');
+                grad.addColorStop(1, 'rgba(3, 2, 10, 0.1)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+
+                // 绘制星云
+                nebulae.forEach(n => {
+                    n.x += n.vx;
+                    n.y += n.vy;
+                    n.pulse += 0.01;
+                    if (n.x < -n.radius) n.x = w + n.radius;
+                    if (n.x > w + n.radius) n.x = -n.radius;
+                    if (n.y < -n.radius) n.y = h + n.radius;
+                    if (n.y > h + n.radius) n.y = -n.radius;
+
+                    const a = n.alpha * (0.8 + 0.2 * Math.sin(n.pulse));
+                    const nebulaGrad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius);
+                    nebulaGrad.addColorStop(0, `hsla(${n.hue}, 60%, 40%, ${a})`);
+                    nebulaGrad.addColorStop(0.5, `hsla(${n.hue}, 50%, 30%, ${a * 0.5})`);
+                    nebulaGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = nebulaGrad;
+                    ctx.fillRect(n.x - n.radius, n.y - n.radius, n.radius * 2, n.radius * 2);
+                });
+
+                // 绘制星星
+                stars.forEach((s, i) => {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.pulse += s.pulseSpeed;
+
+                    // 边界循环
+                    if (s.x < 0) s.x = w;
+                    if (s.x > w) s.x = 0;
+                    if (s.y < 0) s.y = h;
+                    if (s.y > h) s.y = 0;
+
+                    // 闪烁
+                    const twinkle = 0.5 + 0.5 * Math.sin(s.pulse);
+                    const alpha = s.alpha * twinkle;
+
+                    // 光晕
+                    if (s.brightness > 0.7) {
+                        const glowGrad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 4);
+                        glowGrad.addColorStop(0, `hsla(${s.hue}, 80%, 70%, ${alpha * 0.3})`);
+                        glowGrad.addColorStop(1, 'transparent');
+                        ctx.fillStyle = glowGrad;
+                        ctx.fillRect(s.x - s.size * 4, s.y - s.size * 4, s.size * 8, s.size * 8);
+                    }
+
+                    // 星星本体
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${s.hue}, 60%, 80%, ${alpha})`;
+                    ctx.fill();
+                });
+
+                // 绘制流星
+                if (time - lastMeteor > 3 + Math.random() * 5) {
+                    createMeteor();
+                    lastMeteor = time;
+                }
+
+                meteors.forEach((m, idx) => {
+                    m.x += m.speed;
+                    m.y += m.speed * 0.6;
+                    m.alpha -= 0.02;
+
+                    if (m.alpha > 0) {
+                        const meteorGrad = ctx.createLinearGradient(
+                            m.x, m.y,
+                            m.x - m.length * 0.7, m.y - m.length * 0.42
+                        );
+                        meteorGrad.addColorStop(0, `rgba(255, 250, 230, ${m.alpha})`);
+                        meteorGrad.addColorStop(0.3, `rgba(212, 168, 83, ${m.alpha * 0.6})`);
+                        meteorGrad.addColorStop(1, 'transparent');
+
+                        ctx.beginPath();
+                        ctx.moveTo(m.x, m.y);
+                        ctx.lineTo(m.x - m.length * 0.7, m.y - m.length * 0.42);
+                        ctx.strokeStyle = meteorGrad;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        // 流星头部光晕
+                        const headGlow = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, 6);
+                        headGlow.addColorStop(0, `rgba(255, 255, 255, ${m.alpha})`);
+                        headGlow.addColorStop(1, 'transparent');
+                        ctx.fillStyle = headGlow;
+                        ctx.fillRect(m.x - 6, m.y - 6, 12, 12);
+                    }
+                });
+
+                // 移除消失的流星
+                for (let i = meteors.length - 1; i >= 0; i--) {
+                    if (meteors[i].alpha <= 0 || meteors[i].x > w || meteors[i].y > h) {
+                        meteors.splice(i, 1);
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+
+            window.addEventListener('resize', () => {
+                w = window.innerWidth;
+                h = window.innerHeight;
+                canvas.width = w;
+                canvas.height = h;
+            });
+        }
+
+        window.onload = initParticles;
+    </script>
+</body>
+</html>
